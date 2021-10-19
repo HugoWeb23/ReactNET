@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form"
 
 export const CreateUser = () => {
 
-    const FormProps = useForm({ defaultValues: {addresses: [{}]}, resolver: yupResolver(UserSchema) })
+    const FormProps = useForm({ resolver: yupResolver(UserSchema) })
 
     const OnCreateUser = async(data: any) => {
         try {
