@@ -6,22 +6,35 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using reactNET.Attributes;
+using FluentValidation;
 
 namespace reactNET.Entities
 {
     public class User
     {
         public int Id { get; set; }
-        [Required(ErrorMessage = "Le nom est obligatoire")]
+    
         public string Nom { get; set; }
        
         public string Prenom { get; set; }
-        [Required(ErrorMessage = "L'adresse e-mail est obligatoire !")]
+   
         public string Email { get; set; }
-        [Required(ErrorMessage = "L'âge est obligatoire")]
-        [Age(ErrorMessage = "L'utilisateur est mineur !")]
+   
         public int Age { get; set; }
 
         public ICollection<Addresse> Addresses { get; set; }
+    }
+
+    public class UserValidator : AbstractValidator<User>
+    {
+        public UserValidator()
+        {
+            RuleFor(user => user.Nom).NotEmpty().WithMessage("Veuillez saisir un nom");
+            RuleFor(user => user.Prenom).NotEmpty().WithMessage("Veuillez saisir un prénom");
+            RuleFor(user => user.Email).EmailAddress().WithMessage("Veuillez saisir une adresse e-mail");
+            RuleFor(user => user.Age).NotEmpty().WithMessage("Veuillez saisir un age");
+            RuleFor(user => user.Addresses).NotEmpty().WithMessage("Veuillez saisir au moins une adresse");
+            RuleForEach(x => x.Addresses).SetValidator(new AddresseValidator());
+        }
     }
 }

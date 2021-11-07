@@ -8,8 +8,6 @@ export const UserHook = () => {
         switch(action.type) {
             case 'GETALL':
                 return {...state, users: action.payLoad}
-            case 'DELETEONE':
-                return {...state, users: state.users.filter((user: IUser) => user != action.payLoad)}
             default:
                 return state
         }
@@ -23,12 +21,6 @@ export const UserHook = () => {
                 method: "GET"
             })
             dispatch({type: 'GETALL', payLoad: users})
-        },
-        DeleteUser: async (user: IUser) => {
-            await apiFetch(`/api/user/delete/${user.id}`, {
-                method: "DELETE"
-            })
-            dispatch({type: 'DELETEONE', payLoad: user})
         }
     }
 }

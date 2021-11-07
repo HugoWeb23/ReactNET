@@ -32,7 +32,10 @@ namespace reactNET.Controllers
         public IActionResult Single(int id)
         {
             User user = _context.users.Where(user => user.Id == id).Include(user => user.Addresses).FirstOrDefault();
-
+            if(user == null)
+            {
+                return BadRequest(new { error = "L'utilisateur n'existe pas" });
+            }
             return Ok(user);
         }
 
@@ -55,13 +58,19 @@ namespace reactNET.Controllers
         [HttpPut("update/{id}")]
         public IActionResult Update(User user)
         {
-           
-            IEnumerable<Addresse> addresses = _context.addresses.AsNoTracking().Where(a => a.UserId == user.Id);
-            IEnumerable<Addresse> test = addresses.Except(user.Addresses).ToList();
-            _context.addresses.RemoveRange(test);
-            _context.users.Update(user);
-            _context.SaveChanges();
-            return Ok(user);
+           try
+            {
+                IEnumerable<Addresse> addresses = _context.addresses.AsNoTracking().Where(a => a.UserId == user.Id);
+                IEnumerable<Addresse> test = addresses.Except(user.Addresses).ToList();
+                _context.addresses.RemoveRange(test);
+                _context.users.Update(user);
+                _context.SaveChanges();
+                return Ok(user);
+            } catch(DbUpdateConcurrencyException)
+            {
+                return StatusCode(500, new { error = "Erreur lors de la mise à jour de l'utilisateur" });
+            }
+            
         }
 
         [HttpDelete("delete")]

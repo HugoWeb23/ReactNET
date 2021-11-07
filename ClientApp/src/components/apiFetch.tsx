@@ -50,6 +50,9 @@ export const apiFetch = async (endpoint: string, options = {} as any) => {
     if (response.ok) {
         return responseData
     } else {
+        if(responseData.error) {
+            throw new ApiErrors({error: responseData.error})
+        }
         if (responseData.errors) {
             throw new ApiErrors({errorsPerField: responseData.errors})
         } if (responseData.globalErrors) {

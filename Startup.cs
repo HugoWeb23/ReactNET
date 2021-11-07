@@ -10,6 +10,7 @@ using Microsoft.Extensions.FileProviders;
 using reactNET.Entities;
 using reactNET.Services;
 using System.IO;
+using FluentValidation.AspNetCore;
 
 namespace reactNET
 {
@@ -27,14 +28,13 @@ namespace reactNET
         {
             services.AddDbContext<MyContext>(options =>
                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            services.AddControllersWithViews()
-                .AddNewtonsoftJson(options =>
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
                 {
                     options.SuppressModelStateInvalidFilter = true;
-                });
+                })
+                .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Startup>())
+                .AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddScoped<IUser, UserService>();
             // In production, the React files will be served from this directory

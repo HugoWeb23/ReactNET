@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation;
 
 namespace reactNET.Entities
 {
@@ -25,16 +26,27 @@ namespace reactNET.Entities
         public int Id { get; set; }
         [JsonIgnore]
         public int UserId { get; set; }
-        [Required(ErrorMessage = "La rue est obligatoire")]
+      
         public string Rue { get; set; }
-        [Required(ErrorMessage = "Le numéro est obligatoire")]
+
         public string Numero { get; set; }
-        [Required(ErrorMessage = "Le code postal est obligatoire")]
+     
         public string Code_postal { get; set; }
-        [Required(ErrorMessage = "La ville est obligatoire")]
+       
         public string Ville { get; set; }
 
         [JsonIgnore]
         public User User { get; set; }
+    }
+
+    public class AddresseValidator : AbstractValidator<Addresse>
+    {
+        public AddresseValidator()
+        {
+            RuleFor(addresse => addresse.Rue).NotEmpty().WithMessage("Veuillez saisir une rue");
+            RuleFor(addresse => addresse.Numero).NotEmpty().WithMessage("Veuillez saisir un numéro");
+            RuleFor(addresse => addresse.Code_postal).NotEmpty().WithMessage("Veuillez saisir un code postal");
+            RuleFor(addresse => addresse.Ville).NotEmpty().WithMessage("Veuillez saisir une ville");
+        }
     }
 }

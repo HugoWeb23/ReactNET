@@ -7,13 +7,13 @@ import {
     Form,
     Button
 } from 'react-bootstrap'
-import { useForm } from "react-hook-form"
+import { useForm, FormProvider } from "react-hook-form"
 
 export const CreateUser = () => {
 
     const FormProps = useForm({ resolver: yupResolver(UserSchema) })
 
-    const OnCreateUser = async(data: any) => {
+    const OnCreateUser = async (data: any) => {
         try {
             const file = data.image[0]
             delete data.image
@@ -21,8 +21,9 @@ export const CreateUser = () => {
                 method: 'POST',
                 body: JSON.stringify(data)
             })
+            FormProps.reset()
 
-            if(file) {
+            if (file) {
                 const formData = new FormData()
                 formData.append('file', file)
                 const test = await apiFetch(`/api/user/body`, {
@@ -30,7 +31,7 @@ export const CreateUser = () => {
                     body: formData
                 })
             }
-            
+
         } catch (e) {
             console.log('erreur', e)
             if (e instanceof ApiErrors) {
@@ -45,11 +46,13 @@ export const CreateUser = () => {
     }
 
     return <>
-        <Form onSubmit={FormProps.handleSubmit(OnCreateUser)}>
-            <UserForm props={FormProps} />
-            <div className="d-grid gap-2 mt-3 mb-3">
-                <Button variant="primary" size="lg" type="submit">Créer l'utilisateur</Button>
-            </div>
-        </Form>
+        <FormProvider {...FormProps}>
+            <Form onSubmit={FormProps.handleSubmit(OnCreateUser)}>
+                <UserForm />
+                <div className="d-grid gap-2 mt-3 mb-3">
+                    <Button variant="primary" size="lg" type="submit">Créer l'utilisateur</Button>
+                </div>
+            </Form>
+        </FormProvider>
     </>
 }

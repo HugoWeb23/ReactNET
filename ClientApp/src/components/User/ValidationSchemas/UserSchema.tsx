@@ -11,12 +11,5 @@ export const UserSchema = yup.object().shape({
             return false
         }
     }),
-    addresses: yup.array().of(
-        yup.object().shape({
-            rue: yup.string().required('Veuillez saisir une rue'),
-            numero: yup.string().required('Veuillez saisir un numéro'),
-            code_postal: yup.number().typeError('Le code postal doit être composé de chiffres').required('Veuillez saisir un code postal'),
-            ville: yup.string().required('Veuillez saisir une ville')
-        })
-    )
+    addresses: yup.array().required().min(1).typeError('Veuillez saisir au moins une adresse')
 });

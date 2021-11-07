@@ -1,31 +1,30 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router-dom'
-import { useForm, useFieldArray, UseFormReturn, Controller } from "react-hook-form"
+import { useForm, useFieldArray, UseFormReturn, Controller, useFormContext } from "react-hook-form"
 import {
     Form,
     Button,
     Row,
     Col,
     Card,
-    Table
+    Table,
+    Alert,
+    Modal,
+    Collapse
 } from 'react-bootstrap'
-import { Typeahead } from 'react-bootstrap-typeahead'
 import "react-bootstrap-typeahead/css/Typeahead.css";
+import {AddressForm} from './AddressForm';
 
-export const UserForm = ({ props }: any) => {
-    const { register, control, handleSubmit, watch, getValues, setValue, setError, formState: { errors } } = props;
-    const { control: addressControl, register: addressRegister, handleSubmit: handleSubmitAddress, formState: { errors: addressErrors } } = useForm();
+export const UserForm = () => {
+    const { register, control, handleSubmit, watch, getValues, setValue, setError, clearErrors, formState: { errors, isSubmitting } } = useFormContext();
+    const [deletedAddress, setDeletedAddress] = useState<any>([])
+    const [modalDeletedAddress, setModalDeletedAddress] = useState<boolean>(false)
     const { fields, append, prepend, remove, swap, move, insert } = useFieldArray({
         control,
         name: "addresses",
         keyName: "ad"
     });
-
-    const removeField = async (index: number) => {
-        if (fields.length > 1) {
-            remove(index)
-        }
-    }
+    const [newAddress, setNewAddress] = useState<boolean>(false);
 
     const uploadImage = (e: any) => {
         setValue('image', e.target.files[0])
@@ -33,6 +32,17 @@ export const UserForm = ({ props }: any) => {
 
     const onSubmit = (data: any) => {
         append(data)
+        clearErrors('addresses')
+    }
+
+    const deleteAddress = (index: number, field: any) => {
+        setDeletedAddress((addresses: any) => [...addresses, field])
+        remove(index)
+    }
+
+    const handleRestoreAddress = (address: any) => {
+        append(address)
+        setDeletedAddress((addresses: any) => addresses.filter((add: any) => add != address))
     }
 
     return <>
@@ -69,59 +79,22 @@ export const UserForm = ({ props }: any) => {
                     <Form.Control type="file" {...register('image')} />
                 </Form.Group>
             </Col>
+            <Button onClick={() => setNewAddress(!newAddress)}>Nouvelle adresse</Button>
+        <Collapse in={newAddress}>
             <Card className="mt-3 mb-3">
                 <Card.Body>
-                    <Form>
-                    <Form.Group className="mb-3" controlId={`rue`}>
-                        <Form.Label>Rue</Form.Label>
-                        <Form.Control type="text" placeholder="Rue" isInvalid={addressErrors && addressErrors.rue} {...addressRegister(`rue`)} />
-                        {addressErrors && addressErrors.rue && <Form.Control.Feedback type="invalid">{addressErrors.rue.message}</Form.Control.Feedback>}
-                    </Form.Group>
-                    <Form.Group className="mb-3" controlId={`numero`}>
-                        <Form.Label>Numéro</Form.Label>
-                        <Form.Control type="text" placeholder="Numéro" isInvalid={addressErrors && addressErrors.numero} {...addressRegister(`numero`)} />
-                        {addressErrors && addressErrors.numero && <Form.Control.Feedback type="invalid">{addressErrors.numero.message}</Form.Control.Feedback>}
-                    </Form.Group>
-                    <Form.Group className="mb-3" controlId={`code_postal`}>
-                        <Form.Label>Code postal</Form.Label>
-                        <Form.Control type="text" placeholder="Code postal" isInvalid={addressErrors && addressErrors.code_postal} {...addressRegister(`code_postal`)} />
-                        {addressErrors && addressErrors.code_postal && <Form.Control.Feedback type="invalid">{addressErrors.code_postal.message}</Form.Control.Feedback>}
-                    </Form.Group>
-                    <Form.Group className="mb-3" controlId={`ville`}>
-                        <Form.Label>Ville</Form.Label>
-                        <Controller
-                            control={addressControl}
-                            name={`ville`}
-                            render={({
-                                field: { onChange, onBlur, value, name, ref }
-                            }) => (
-                                <Typeahead
-                                    id="menu-align-example"
-                                    options={[
-                                        "Mouscron",
-                                        "Tournai",
-                                        "Mons",
-                                        "Namur"
-                                    ]}
-                                    placeholder="Sélectionnez une ville"
-                                    onChange={(value) => onChange(...value)}
-                                    isInvalid={errors.addresses && addressErrors && addressErrors.ville}
-                                    emptyLabel='Aucun résultat'
-                                    selected={value != undefined ? [value] : []}
-                                />
-                            )}
-                        />
-                        {addressErrors && addressErrors.ville && <Form.Control.Feedback type="invalid">{addressErrors.ville.message}</Form.Control.Feedback>}
-                    </Form.Group>
-                    <Form.Group>
-                        <Button onClick={handleSubmitAddress(onSubmit)} size="sm" variant="success">Ajouter l'adresse</Button>
-                    </Form.Group>
-                    </Form>
+                   <AddressForm onSubmit={onSubmit}/>
                 </Card.Body>
             </Card>
+        </Collapse>
         </Row>
         <h3>Adresses</h3>
         <p>Retrouvez ici toutes les adresses de l'utilisateur.</p>
+        <DeletedAddressModal isOpen={modalDeletedAddress} handleClose={() => setModalDeletedAddress(!modalDeletedAddress)} addresses={deletedAddress} onRestore={handleRestoreAddress}/>
+        {errors.addresses && errors.addresses.type == 'min' && <Alert variant="danger">Veuillez ajouter au moins une adresse.</Alert>}
+        <div className="d-flex justify-content-end mb-2">
+            {deletedAddress.length > 0 && <Button variant="danger" onClick={() => setModalDeletedAddress(true)}>Adresses supprimées ({deletedAddress.length})</Button>}
+        </div>
         <Table striped bordered hover>
             <thead>
                 <tr>
@@ -130,23 +103,62 @@ export const UserForm = ({ props }: any) => {
                     <td>Numéro</td>
                     <td>Ville</td>
                     <td>Code postal</td>
+                    <td>Actions</td>
                 </tr>
             </thead>
             <tbody>
-                {fields.length === 0 && <tr><td colSpan={4}>Aucune adresse</td></tr>}
-                {fields.map((field: any, index: number) => <Address field={field} />)}
+                {fields.length === 0 && <tr><td colSpan={6}>Aucune adresse</td></tr>}
+                {fields.map((field: any, index: number) => <Address index={index} field={field} onDelete={deleteAddress} disableOptions={isSubmitting} errors={errors.addresses} />)}
             </tbody>
         </Table>
     </>
 }
 
-const Address = ({field}: any) => {
+const Address = ({index, field, onDelete, disableOptions, errors}: any) => {
+    
+    const test = () => {
+        if(errors && errors[index]) {
+            return 'table-danger'
+        } else if(!field.id) {
+            return 'table-success'
+        }
+    }
 
-    return <tr className={field.id ? '' : 'table-success'}>
-        <td>{field.id}</td>
+    return <>
+        <tr key={index} className={test()}>
+        <td>{field.id ? field.id : '+'}</td>
         <td>{field.rue}</td>
         <td>{field.numero}</td>
         <td>{field.ville}</td>
         <td>{field.code_postal}</td>
+        <td><Button size="sm" variant="primary" disabled={disableOptions}>Modifier</Button> - <Button size="sm" variant="danger" disabled={disableOptions} onClick={() => onDelete(index, field)}>Supprimer</Button></td>
     </tr>
+    </>
+}
+
+const DeletedAddressModal = ({isOpen, handleClose, addresses, onRestore}: any) => {
+    const restore = (value: any) => {
+        onRestore(value)
+        if(addresses.length <= 1) {
+            handleClose()
+        }
+    }
+    return <Modal show={isOpen} onHide={handleClose} size="lg">
+    <Modal.Header closeButton>
+      <Modal.Title>Adresses supprimées</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        {addresses.map((address: any, index: number) => {
+            return <Row key={index} className="mb-2">
+                <Col>{address.rue}</Col>
+                <Col><Button size="sm" variant="success" onClick={() => restore(address)}>Restaurer</Button></Col>
+            </Row>
+        })}
+    </Modal.Body>
+    <Modal.Footer>
+      <Button variant="secondary" onClick={handleClose}>
+        Fermer
+      </Button>
+    </Modal.Footer>
+  </Modal>
 }

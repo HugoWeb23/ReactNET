@@ -16,7 +16,7 @@ import {
     Card,
     Placeholder
 } from 'react-bootstrap'
-import { UserHook } from '../Hooks/UserHook'
+import { UserHook } from '../Hooks/UsersHook'
 import { ModalForm } from './UI/ModalForm'
 
 const AllUsers = () => {
